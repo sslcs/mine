@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">AMine</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="time">耗时：%1$d秒</string>
+    <string name="rest">剩余：%1$d</string>
+</resources>
