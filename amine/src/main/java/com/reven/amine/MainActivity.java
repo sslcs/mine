@@ -32,6 +32,7 @@ public class MainActivity extends Activity {
                 ivStatus.getDrawable().setLevel(0);
                 tvTime.setText(getString(R.string.time, 0));
                 mSpendTime = 0;
+                btnMark.setSelected(false);
                 stopTimer();
                 startTimer();
             }

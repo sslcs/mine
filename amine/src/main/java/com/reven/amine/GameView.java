@@ -18,9 +18,8 @@ import java.util.Collections;
  * GameView
  */
 public class GameView extends View implements View.OnTouchListener {
-    private final int mPadding = 10;
     private int mColCount, mRowCount, mTotalCount;
-    private int mMineCount = 66;
+    private int mMineCount;
     private ArrayList<Bitmap> mIcons = new ArrayList<>(15);
     private int mIconSide;
     private int mMineRest;
@@ -100,6 +99,7 @@ public class GameView extends View implements View.OnTouchListener {
     }
 
     private void initData() {
+        int mPadding = 10;
         int width = getWidth() - mPadding * 2;
         mColCount = width / mIconSide;
         mOffsetX = (width - mColCount * mIconSide) / 2 + mPadding;
@@ -107,6 +107,7 @@ public class GameView extends View implements View.OnTouchListener {
         mRowCount = height / mIconSide;
         mOffsetY = (height - mRowCount * mIconSide) / 2 + mOffsetX;
         mTotalCount = mColCount * mRowCount;
+        mMineCount = mTotalCount / 5;
         mMineData = new ArrayList<>(mTotalCount);
         start();
     }
@@ -213,7 +214,7 @@ public class GameView extends View implements View.OnTouchListener {
             int x = (int) event.getX();
             int y = (int) event.getY();
             int selCol = (x - mOffsetX) / mIconSide;
-            int selRow = y / mIconSide;
+            int selRow = (y - mOffsetY) / mIconSide;
             if (selRow < mRowCount && selCol < mColCount) {
                 int index = selRow * mColCount + selCol;
                 if (isMarking) {
