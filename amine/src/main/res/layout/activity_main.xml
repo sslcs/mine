@@ -20,11 +20,27 @@
             android:textColor="@android:color/white"/>
         <TextView
             android:id="@+id/tv_rest"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:paddingRight="8dp"
             android:text="@string/rest"
             android:textColor="@android:color/white"/>
+        <ImageView
+            android:id="@+id/btn_rank"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:src="@drawable/i_rank"/>
+        <ImageView
+            android:id="@+id/btn_level"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:src="@drawable/i_setting"/>
         <ImageView
             android:id="@+id/btn_start"
             android:layout_width="wrap_content"

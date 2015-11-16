@@ -23,10 +23,12 @@ public class GameView extends View implements View.OnTouchListener {
     private ArrayList<Bitmap> mIcons = new ArrayList<>(15);
     private int mIconSide;
     private int mMineRest;
+    private int mLevel;
     private int mOffsetX, mOffsetY;
     private ArrayList<Integer> mMineData;
     private boolean isMarking = false;
     private boolean isFinish = false;
+    private boolean isStart = false;
     private OnStatusChangeListener mListener;
 
     public GameView(Context context) {
@@ -42,8 +44,26 @@ public class GameView extends View implements View.OnTouchListener {
         this.isMarking = isMarking;
     }
 
-    public boolean isFinish() {
-        return isFinish;
+    public void setLevel(int level) {
+        mLevel = level;
+        if (mMineData == null) {
+            return;
+        }
+
+        if (level == 0) {
+            mMineCount = mTotalCount / 10;
+        } else if (level == 1) {
+            mMineCount = mTotalCount / 7;
+        } else if (level == 2) {
+            mMineCount = mTotalCount / 5;
+        } else {
+            mMineCount = mTotalCount / 3;
+        }
+        resetData();
+    }
+
+    public boolean isStart() {
+        return isStart;
     }
 
     private void initGame() {
@@ -51,7 +71,7 @@ public class GameView extends View implements View.OnTouchListener {
         setOnTouchListener(this);
     }
 
-    public void start() {
+    public void resetData() {
         initMineData();
         mMineRest = mMineCount;
         isFinish = false;
@@ -107,9 +127,8 @@ public class GameView extends View implements View.OnTouchListener {
         mRowCount = height / mIconSide;
         mOffsetY = (height - mRowCount * mIconSide) / 2 + mOffsetX;
         mTotalCount = mColCount * mRowCount;
-        mMineCount = mTotalCount / 5;
         mMineData = new ArrayList<>(mTotalCount);
-        start();
+        setLevel(mLevel);
     }
 
     @Override
@@ -164,6 +183,7 @@ public class GameView extends View implements View.OnTouchListener {
             }
             mMineData.set(index, 0x3A);
             isFinish = true;
+            isStart = false;
             if (mListener != null) {
                 mListener.onLose();
             }
@@ -208,6 +228,13 @@ public class GameView extends View implements View.OnTouchListener {
         super.onTouchEvent(event);
         if (isFinish) {
             return true;
+        }
+
+        if (!isStart) {
+            isStart = true;
+            if (mListener != null) {
+                mListener.onStart();
+            }
         }
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -319,6 +346,7 @@ public class GameView extends View implements View.OnTouchListener {
             }
         }
         isFinish = true;
+        isStart = false;
         return true;
     }
 
@@ -328,5 +356,7 @@ public class GameView extends View implements View.OnTouchListener {
         void onLose();
 
         void onMark();
+
+        void onStart();
     }
 }
