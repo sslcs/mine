@@ -4,14 +4,15 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
     private Handler mHandler;
@@ -44,14 +45,13 @@ public class MainActivity extends Activity {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setTitle("排行榜");
                 builder.setMessage("第一名 ：" + mFirst + "秒\n" + "第二名 ：" + mSecond + "秒\n" + "第三名 ：" + mThird + "秒\n");
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                    builder.setPositiveButton("确定", null);
-                }
-                builder.create().show();
+                AlertDialog dialog = builder.create();
+                dialog.setCanceledOnTouchOutside(true);
+                dialog.show();
             }
         });
 
-        final String[] arrayLevel = new String[]{"简单", "普通", "困难", "地狱"};
+        final String[] arrayLevel = new String[]{"简单", "普通", "困难", "地狱(请慎重!)"};
         findViewById(R.id.btn_level).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -67,12 +67,18 @@ public class MainActivity extends Activity {
                         dialog.dismiss();
                     }
                 });
-                builder.create().show();
+                AlertDialog dialog = builder.create();
+                dialog.setCanceledOnTouchOutside(true);
+                dialog.show();
             }
         });
         ivStatus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!mGameView.isFinish()) {
+                    return;
+                }
+
                 mGameView.resetData();
                 ivStatus.getDrawable().setLevel(0);
                 tvTime.setText(getString(R.string.time, 0));
@@ -96,9 +102,15 @@ public class MainActivity extends Activity {
             @Override
             public void onWin() {
                 stopTimer();
+                String tip = "完成！";
                 if (mSpendTime < mThird) {
                     saveScore();
+                    tip = "新纪录！";
                 }
+
+                Toast toast = Toast.makeText(MainActivity.this, tip, Toast.LENGTH_LONG);
+                toast.setGravity(Gravity.CENTER, 0, 0);
+                toast.show();
             }
 
             @Override
@@ -159,6 +171,7 @@ public class MainActivity extends Activity {
         mGameView.setLevel(mLevel);
         SharedPreferences.Editor editor = mPref.edit();
         editor.putInt("level", mLevel).apply();
+        getScore();
     }
 
     @Override

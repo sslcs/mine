@@ -37,7 +37,8 @@ public class GameView extends View implements View.OnTouchListener {
 
     public GameView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        initGame();
+        initResource();
+        setOnTouchListener(this);
     }
 
     public void setIsMarking(boolean isMarking) {
@@ -66,9 +67,8 @@ public class GameView extends View implements View.OnTouchListener {
         return isStart;
     }
 
-    private void initGame() {
-        initResource();
-        setOnTouchListener(this);
+    public boolean isFinish() {
+        return isFinish;
     }
 
     public void resetData() {
@@ -118,7 +118,7 @@ public class GameView extends View implements View.OnTouchListener {
         invalidate();
     }
 
-    private void initData() {
+    private void initGameData() {
         int mPadding = 10;
         int width = getWidth() - mPadding * 2;
         mColCount = width / mIconSide;
@@ -140,7 +140,7 @@ public class GameView extends View implements View.OnTouchListener {
         canvas.drawColor(Color.BLACK);
 
         if (mColCount == 0) {
-            initData();
+            initGameData();
         }
 
         for (int i = 0; i < mRowCount; i++) {
