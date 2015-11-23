@@ -12,6 +12,7 @@ import android.view.View;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Random;
 
 /**
  * Created by LiuCongshan on 2015/11/10.
@@ -30,6 +31,7 @@ public class GameView extends View implements View.OnTouchListener {
     private boolean isFinish = false;
     private boolean isStart = false;
     private OnStatusChangeListener mListener;
+    private Random mRandom;
 
     public GameView(Context context) {
         this(context, null);
@@ -43,6 +45,7 @@ public class GameView extends View implements View.OnTouchListener {
 
     public void setIsMarking(boolean isMarking) {
         this.isMarking = isMarking;
+        invalidate();
     }
 
     public void setLevel(int level) {
@@ -58,7 +61,7 @@ public class GameView extends View implements View.OnTouchListener {
         } else if (level == 2) {
             mMineCount = mTotalCount / 5;
         } else {
-            mMineCount = mTotalCount / 3;
+            mMineCount = mTotalCount / 4;
         }
         resetData();
     }
@@ -72,50 +75,18 @@ public class GameView extends View implements View.OnTouchListener {
     }
 
     public void resetData() {
-        initMineData();
-        mMineRest = mMineCount;
-        isFinish = false;
-        if (mListener != null) {
-            mListener.onMark();
-        }
-    }
-
-    private void initMineData() {
         mMineData.clear();
         for (int i = 0; i < mTotalCount; i++) {
             mMineData.add(i < mMineCount ? 0x09 : 0x00);
         }
         Collections.shuffle(mMineData);
 
-        for (int i = 0; i < mTotalCount; i++) {
-            if (isMine(i)) {
-                continue;
-            }
-
-            int amount = 0;
-            //Above
-            if (i - mColCount > -1) {
-                if (isMine(i - mColCount)) amount++;
-                //Left
-                if ((i - mColCount) % mColCount != 0 && isMine(i - mColCount - 1)) amount++;
-                //Right
-                if ((i - mColCount + 1) % mColCount != 0 && isMine(i - mColCount + 1)) amount++;
-            }
-            //Left
-            if (i % mColCount != 0 && isMine(i - 1)) amount++;
-            //Right
-            if ((i + 1) % mColCount != 0 && isMine(i + 1)) amount++;
-            //Below
-            if (i + mColCount < mTotalCount) {
-                if (isMine(i + mColCount)) amount++;
-                //Left
-                if ((i + mColCount) % mColCount != 0 && isMine(i + mColCount - 1)) amount++;
-                //Right
-                if ((i + mColCount + 1) % mColCount != 0 && isMine(i + mColCount + 1)) amount++;
-            }
-            mMineData.set(i, amount);
-        }
         invalidate();
+        mMineRest = mMineCount;
+        isFinish = false;
+        if (mListener != null) {
+            mListener.onMark();
+        }
     }
 
     private void initGameData() {
@@ -127,6 +98,7 @@ public class GameView extends View implements View.OnTouchListener {
         mRowCount = height / mIconSide;
         mOffsetY = (height - mRowCount * mIconSide) / 2 + mOffsetX;
         mTotalCount = mColCount * mRowCount;
+        mRandom = new Random(System.currentTimeMillis());
         mMineData = new ArrayList<>(mTotalCount);
         setLevel(mLevel);
     }
@@ -137,7 +109,7 @@ public class GameView extends View implements View.OnTouchListener {
         if (isInEditMode() || mIconSide == 0) {
             return;
         }
-        canvas.drawColor(Color.BLACK);
+        canvas.drawColor(isMarking ? 0XFFCCE9CF : Color.BLACK);
 
         if (mColCount == 0) {
             initGameData();
@@ -170,36 +142,63 @@ public class GameView extends View implements View.OnTouchListener {
         return mMineData.get(index) & 0xF0;
     }
 
-    private void open(int index) {
-        if (isMine(index)) {
-            for (int i = 0; i < mTotalCount; i++) {
-                if (isMine(i)) {
-                    if (getStatus(i) != 0x10) {
-                        mMineData.set(i, 0x39);
-                    }
-                } else if (getStatus(i) == 0x10) {
-                    mMineData.set(i, 0x3B);
+    private void onMine(int index) {
+        for (int i = 0; i < mTotalCount; i++) {
+            if (isMine(i)) {
+                if (getStatus(i) != 0x10) {
+                    mMineData.set(i, 0x39);
                 }
+            } else if (getStatus(i) == 0x10) {
+                mMineData.set(i, 0x3B);
             }
-            mMineData.set(index, 0x3A);
-            isFinish = true;
-            isStart = false;
-            if (mListener != null) {
-                mListener.onLose();
-            }
-        } else {
-            mMineData.set(index, getValue(index) + 0x30);
-
-            if (getValue(index) == 0x00) {
-                onBlank(index);
-            }
-
-            if (isWin() && mListener != null) {
-                mListener.onWin();
-            }
+        }
+        mMineData.set(index, 0x3A);
+        isFinish = true;
+        isStart = false;
+        if (mListener != null) {
+            mListener.onLose();
         }
 
         invalidate();
+    }
+
+    private void open(int index) {
+        setNumber(index);
+
+        if (getValue(index) == 0x00) {
+            onBlank(index);
+        }
+
+        if (isWin() && mListener != null) {
+            mListener.onWin();
+        }
+
+        invalidate();
+    }
+
+    private void setNumber(int index) {
+        int amount = 0;
+        //Above
+        if (index - mColCount > -1) {
+            if (isMine(index - mColCount)) amount++;
+            //Left
+            if ((index - mColCount) % mColCount != 0 && isMine(index - mColCount - 1)) amount++;
+            //Right
+            if ((index - mColCount + 1) % mColCount != 0 && isMine(index - mColCount + 1)) amount++;
+        }
+        //Left
+        if (index % mColCount != 0 && isMine(index - 1)) amount++;
+        //Right
+        if ((index + 1) % mColCount != 0 && isMine(index + 1)) amount++;
+        //Below
+        if (index + mColCount < mTotalCount) {
+            if (isMine(index + mColCount)) amount++;
+            //Left
+            if ((index + mColCount) % mColCount != 0 && isMine(index + mColCount - 1)) amount++;
+            //Right
+            if ((index + mColCount + 1) % mColCount != 0 && isMine(index + mColCount + 1)) amount++;
+        }
+        mMineData.set(index, amount + 0x30);
     }
 
     private void mark(int index) {
@@ -223,18 +222,75 @@ public class GameView extends View implements View.OnTouchListener {
         }
     }
 
+    private void moveMine(int index, int center) {
+        int i;
+        while (true) {
+            i = mRandom.nextInt(mTotalCount);
+            if ((i > center - mColCount - 2 && i < center + mColCount + 2) || isMine(i)) {
+                continue;
+            }
+
+            mMineData.set(i, 0x09);
+            mMineData.set(index, 0x00);
+            return;
+        }
+    }
+
+    private void firstClick(int index) {
+        isStart = true;
+        if (mListener != null) {
+            mListener.onStart();
+        }
+
+        if (isMine(index)) {
+            moveMine(index, index);
+        }
+
+        //Above
+        if (index - mColCount > -1) {
+            if (isMine(index - mColCount)) {
+                moveMine(index - mColCount, index);
+            }
+            //Left
+            if ((index - mColCount) % mColCount != 0 && isMine(index - mColCount - 1)) {
+                moveMine(index - mColCount - 1, index);
+            }
+            //Right
+            if ((index - mColCount + 1) % mColCount != 0 && isMine(index - mColCount + 1)) {
+                moveMine(index - mColCount + 1, index);
+            }
+        }
+        //Left
+        if (index % mColCount != 0 && isMine(index - 1)) {
+            moveMine(index - 1, index);
+        }
+        //Right
+        if ((index + 1) % mColCount != 0 && isMine(index + 1)) {
+            moveMine(index + 1, index);
+        }
+        //Below
+        if (index + mColCount < mTotalCount) {
+            if (isMine(index + mColCount)) {
+                moveMine(index + mColCount, index);
+            }
+            //Left
+            if ((index + mColCount) % mColCount != 0 && isMine(index + mColCount - 1)) {
+                moveMine(index + mColCount - 1, index);
+            }
+            //Right
+            if ((index + mColCount + 1) % mColCount != 0 && isMine(index + mColCount + 1)) {
+                moveMine(index + mColCount + 1, index);
+            }
+        }
+
+        open(index);
+    }
+
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         super.onTouchEvent(event);
         if (isFinish) {
             return true;
-        }
-
-        if (!isStart) {
-            isStart = true;
-            if (mListener != null) {
-                mListener.onStart();
-            }
         }
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -244,6 +300,12 @@ public class GameView extends View implements View.OnTouchListener {
             int selRow = (y - mOffsetY) / mIconSide;
             if (selRow < mRowCount && selCol < mColCount) {
                 int index = selRow * mColCount + selCol;
+
+                if (!isStart) {
+                    firstClick(index);
+                    return true;
+                }
+
                 if (isMarking) {
                     mark(index);
                     return true;
@@ -253,7 +315,11 @@ public class GameView extends View implements View.OnTouchListener {
                     return true;
                 }
 
-                open(index);
+                if (isMine(index)) {
+                    onMine(index);
+                } else {
+                    open(index);
+                }
             }
         }
         return true;
@@ -348,6 +414,15 @@ public class GameView extends View implements View.OnTouchListener {
         isFinish = true;
         isStart = false;
         return true;
+    }
+
+    public void onDestroy() {
+        for (Bitmap bm : mIcons) {
+            bm.recycle();
+        }
+        mIcons.clear();
+        mMineData.clear();
+        System.gc();
     }
 
     public interface OnStatusChangeListener {

@@ -30,6 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="2dp"
+            android:layout_marginTop="2dp"
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
             android:src="@drawable/i_rank"/>
@@ -38,6 +39,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="2dp"
+            android:layout_marginTop="2dp"
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
             android:src="@drawable/i_setting"/>
@@ -46,6 +48,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="2dp"
+            android:layout_marginTop="2dp"
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
             android:src="@drawable/level_status"/>
@@ -54,6 +57,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="2dp"
+            android:layout_marginTop="2dp"
             android:paddingLeft="8dp"
             android:paddingRight="16dp"
             android:src="@drawable/selector_flag"/>
