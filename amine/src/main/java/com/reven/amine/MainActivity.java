@@ -33,7 +33,6 @@ public class MainActivity extends Activity {
         final TextView tvRest = (TextView) findViewById(R.id.tv_rest);
         final TextView tvTime = (TextView) findViewById(R.id.tv_time);
         final View btnMark = findViewById(R.id.btn_mark);
-        final View vInfo = findViewById(R.id.v_info);
 
         mPref = PreferenceManager.getDefaultSharedPreferences(this);
         mLevel = mPref.getInt("level", 0);

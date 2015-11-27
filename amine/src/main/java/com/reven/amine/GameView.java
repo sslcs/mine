@@ -406,6 +406,10 @@ public class GameView extends View implements View.OnTouchListener {
     }
 
     public boolean isWin() {
+        if (isFinish) {
+            return false;
+        }
+
         for (int i = 0; i < mTotalCount; i++) {
             if (getStatus(i) != 0x30 && !isMine(i)) {
                 return false;
