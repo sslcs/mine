@@ -100,7 +100,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        tvRest.setText(getString(R.string.rest, mGameView.getMineRest()));
+        tvRest.setText(getString(R.string.rest, mGameView.getMineRest(), mGameView.getVirginRest()));
         tvTime.setText(getString(R.string.time, 0));
         mGameView.setOnStatusChangeListener(new GameView.OnStatusChangeListener() {
             @Override
@@ -125,7 +125,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onMark() {
-                tvRest.setText(getString(R.string.rest, mGameView.getMineRest()));
+                tvRest.setText(getString(R.string.rest, mGameView.getMineRest(), mGameView.getVirginRest()));
             }
 
             @Override

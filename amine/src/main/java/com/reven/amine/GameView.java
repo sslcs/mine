@@ -20,9 +20,9 @@ import java.util.Random;
  */
 public class GameView extends View implements View.OnTouchListener {
     private int mColCount, mRowCount, mTotalCount;
-    private int mMineCount;
+    private int mMineCount, mVirginRest;
     private ArrayList<Bitmap> mIcons = new ArrayList<>(15);
-    private int mIconSide;
+    private int mIconSize;
     private int mMineRest;
     private int mLevel;
     private int mOffsetX, mOffsetY;
@@ -83,6 +83,7 @@ public class GameView extends View implements View.OnTouchListener {
 
         invalidate();
         mMineRest = mMineCount;
+        mVirginRest = mTotalCount;
         isFinish = false;
         if (mListener != null) {
             mListener.onMark();
@@ -92,11 +93,11 @@ public class GameView extends View implements View.OnTouchListener {
     private void initGameData() {
         int mPadding = 10;
         int width = getWidth() - mPadding * 2;
-        mColCount = width / mIconSide;
-        mOffsetX = (width - mColCount * mIconSide) / 2 + mPadding;
+        mColCount = width / mIconSize;
+        mOffsetX = (width - mColCount * mIconSize) / 2 + mPadding;
         int height = getHeight() - mOffsetX * 2;
-        mRowCount = height / mIconSide;
-        mOffsetY = (height - mRowCount * mIconSide) / 2 + mOffsetX;
+        mRowCount = height / mIconSize;
+        mOffsetY = (height - mRowCount * mIconSize) / 2 + mOffsetX;
         mTotalCount = mColCount * mRowCount;
         mRandom = new Random(System.currentTimeMillis());
         mMineData = new ArrayList<>(mTotalCount);
@@ -106,7 +107,7 @@ public class GameView extends View implements View.OnTouchListener {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (isInEditMode() || mIconSide == 0) {
+        if (isInEditMode() || mIconSize == 0) {
             return;
         }
         canvas.drawColor(isMarking ? 0XFFCCE9CF : Color.BLACK);
@@ -125,7 +126,7 @@ public class GameView extends View implements View.OnTouchListener {
                 } else {
                     indexIcon = 0x0C + status / 0x10;
                 }
-                canvas.drawBitmap(mIcons.get(indexIcon), mOffsetX + j * mIconSide, mOffsetY + i * mIconSide, null);
+                canvas.drawBitmap(mIcons.get(indexIcon), mOffsetX + j * mIconSize, mOffsetY + i * mIconSize, null);
             }
         }
     }
@@ -164,6 +165,7 @@ public class GameView extends View implements View.OnTouchListener {
 
     private void open(int index) {
         setNumber(index);
+        mVirginRest--;
 
         if (getValue(index) == 0x00) {
             onBlank(index);
@@ -174,6 +176,7 @@ public class GameView extends View implements View.OnTouchListener {
         }
 
         invalidate();
+        if (mListener != null) mListener.onMark();
     }
 
     private void setNumber(int index) {
@@ -209,9 +212,11 @@ public class GameView extends View implements View.OnTouchListener {
         if (getStatus(index) == 0x00) {
             mMineData.set(index, mMineData.get(index) + 0x10);
             mMineRest--;
+            mVirginRest--;
         } else if (getStatus(index) == 0x10) {
             mMineData.set(index, mMineData.get(index) + 0x10);
             mMineRest++;
+            mVirginRest++;
         } else {
             mMineData.set(index, mMineData.get(index) & 0x0F);
         }
@@ -296,8 +301,8 @@ public class GameView extends View implements View.OnTouchListener {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             int x = (int) event.getX();
             int y = (int) event.getY();
-            int selCol = (x - mOffsetX) / mIconSide;
-            int selRow = (y - mOffsetY) / mIconSide;
+            int selCol = (x - mOffsetX) / mIconSize;
+            int selRow = (y - mOffsetY) / mIconSize;
             if (selRow < mRowCount && selCol < mColCount) {
                 int index = selRow * mColCount + selCol;
 
@@ -391,7 +396,7 @@ public class GameView extends View implements View.OnTouchListener {
         mIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mine_wrong));
 
         Bitmap bDefault = BitmapFactory.decodeResource(r, R.drawable.i_default);
-        mIconSide = bDefault.getWidth();
+        mIconSize = bDefault.getWidth();
         mIcons.add(bDefault);
         mIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mark_flag));
         mIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mark_doubt));
@@ -399,6 +404,10 @@ public class GameView extends View implements View.OnTouchListener {
 
     public int getMineRest() {
         return mMineRest;
+    }
+
+    public int getVirginRest() {
+        return mVirginRest;
     }
 
     public void setOnStatusChangeListener(OnStatusChangeListener listener) {
