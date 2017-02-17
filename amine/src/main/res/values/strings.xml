@@ -2,4 +2,18 @@
     <string name="app_name">扫雷</string>
     <string name="time">耗时：%1$d秒</string>
     <string name="rest">剩余：%1$d/%2$d</string>
+    <string name="rank">排行榜</string>
+    <string name="level">难度选择：%1$s</string>
+    <string name="first_click">第一次点击：%1$s</string>
+    <string name="start_game">开始扫雷</string>
+    <string-array name="level">
+        <item>简单</item>
+        <item>普通</item>
+        <item>专家</item>
+    </string-array>
+    <string-array name="first_click_setting">
+        <item>无雷</item>
+        <item>可以有雷</item>
+        <item>9格内无雷</item>
+    </string-array>
 </resources>

@@ -19,17 +19,18 @@ import java.util.Random;
  * GameView
  */
 public class GameView extends View implements View.OnTouchListener {
-    private int mColCount, mRowCount, mTotalCount;
-    private int mMineCount, mVirginRest;
-    private ArrayList<Bitmap> mIcons = new ArrayList<>(15);
-    private int mIconSize;
-    private int mMineRest;
-    private int mLevel;
-    private int mOffsetX, mOffsetY;
-    private ArrayList<Integer> mMineData;
-    private boolean isMarking = false;
-    private boolean isFinish = false;
-    private boolean isStart = false;
+    private int iColCount, iRowCount, iTotalCount;
+    private int iMineCount, iVirginRest;
+    private ArrayList<Bitmap> aIcons = new ArrayList<>(15);
+    private int iIconSize;
+    private int iMineRest;
+    private int iLevel, iFirstClickSetting;
+    private int iOffsetX, iOffsetY;
+    private ArrayList<Integer> aMineData;
+    private boolean bMarking = false;
+    private boolean bFinished = false;
+    private boolean bStarted = false;
+    private boolean bNeedInit = true;
     private OnStatusChangeListener mListener;
     private Random mRandom;
 
@@ -43,82 +44,93 @@ public class GameView extends View implements View.OnTouchListener {
         setOnTouchListener(this);
     }
 
-    public void setIsMarking(boolean isMarking) {
-        this.isMarking = isMarking;
+    public void setMarking(boolean marking) {
+        this.bMarking = marking;
         invalidate();
     }
 
-    public void setLevel(int level) {
-        mLevel = level;
-        if (mMineData == null) {
-            return;
-        }
-
-        if (level == 0) {
-            mMineCount = mTotalCount / 10;
-        } else if (level == 1) {
-            mMineCount = mTotalCount / 7;
-        } else if (level == 2) {
-            mMineCount = mTotalCount / 5;
-        } else {
-            mMineCount = mTotalCount / 4;
-        }
-        resetData();
+    public void init(int level, int firstClickSetting) {
+        iLevel = level;
+        iFirstClickSetting = firstClickSetting;
     }
 
-    public boolean isStart() {
-        return isStart;
+    public boolean hasStarted() {
+        return bStarted;
     }
 
-    public boolean isFinish() {
-        return isFinish;
+    public boolean hasFinished() {
+        return bFinished;
     }
 
     public void resetData() {
-        mMineData.clear();
-        for (int i = 0; i < mTotalCount; i++) {
-            mMineData.add(i < mMineCount ? 0x09 : 0x00);
+        aMineData.clear();
+        for (int i = 0; i < iTotalCount; i++) {
+            aMineData.add(i < iMineCount ? 0x09 : 0x00);
         }
-        Collections.shuffle(mMineData);
+        Collections.shuffle(aMineData);
 
         invalidate();
-        mMineRest = mMineCount;
-        mVirginRest = mTotalCount;
-        isFinish = false;
+        iMineRest = iMineCount;
+        iVirginRest = iTotalCount;
+        bFinished = false;
         if (mListener != null) {
             mListener.onMark();
         }
     }
 
     private void initGameData() {
+        bNeedInit = false;
+
         int mPadding = 10;
         int width = getWidth() - mPadding * 2;
-        mColCount = width / mIconSize;
-        mOffsetX = (width - mColCount * mIconSize) / 2 + mPadding;
-        int height = getHeight() - mOffsetX * 2;
-        mRowCount = height / mIconSize;
-        mOffsetY = (height - mRowCount * mIconSize) / 2 + mOffsetX;
-        mTotalCount = mColCount * mRowCount;
+        iColCount = iLevel == 0 ? 8 : width / iIconSize;
+        iOffsetX = (width - iColCount * iIconSize) / 2 + mPadding;
+        int height = getHeight() - iOffsetX * 2;
+
+        if (iLevel == 0) {
+            iRowCount = 8;
+        } else {
+            iRowCount = height / iIconSize;
+            if (iLevel == 1 && iRowCount * iColCount > 256) {
+                for (int i = iRowCount - 1; i > 8; i--) {
+                    if (i * iColCount < 256) {
+                        iRowCount = i + 1;
+                        break;
+                    }
+                }
+            }
+        }
+        iOffsetY = (height - iRowCount * iIconSize) / 2 + iOffsetX;
+        iTotalCount = iColCount * iRowCount;
+
+        // 设置地雷数量
+        if (iLevel == 0) {
+            iMineCount = 10;
+        } else if (iLevel == 1) {
+            iMineCount = (int) (iTotalCount / 6.4);
+        } else if (iLevel == 2) {
+            iMineCount = (int) (iTotalCount / 4.8);
+        }
+        aMineData = new ArrayList<>(iTotalCount);
         mRandom = new Random(System.currentTimeMillis());
-        mMineData = new ArrayList<>(mTotalCount);
-        setLevel(mLevel);
+        resetData();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (isInEditMode() || mIconSize == 0) {
+        if (isInEditMode() || iIconSize == 0) {
             return;
         }
-        canvas.drawColor(isMarking ? 0XFFCCE9CF : Color.BLACK);
 
-        if (mColCount == 0) {
+        if (bNeedInit) {
             initGameData();
         }
 
-        for (int i = 0; i < mRowCount; i++) {
-            for (int j = 0; j < mColCount; j++) {
-                int indexData = i * mColCount + j;
+        canvas.drawColor(bMarking ? 0XFFCCE9CF : Color.BLACK);
+        for (int row = 0; row < iRowCount; row++) {
+            for (int column = 0; column < iColCount; column++) {
+                int indexData = row * iColCount + column;
                 int status = getStatus(indexData);
                 int indexIcon;
                 if (status == 0x30) {
@@ -126,7 +138,8 @@ public class GameView extends View implements View.OnTouchListener {
                 } else {
                     indexIcon = 0x0C + status / 0x10;
                 }
-                canvas.drawBitmap(mIcons.get(indexIcon), mOffsetX + j * mIconSize, mOffsetY + i * mIconSize, null);
+                canvas.drawBitmap(aIcons.get(indexIcon), iOffsetX + column * iIconSize, iOffsetY + row * iIconSize,
+                    null);
             }
         }
     }
@@ -136,26 +149,26 @@ public class GameView extends View implements View.OnTouchListener {
     }
 
     private int getValue(int index) {
-        return mMineData.get(index) & 0x0F;
+        return aMineData.get(index) & 0x0F;
     }
 
     private int getStatus(int index) {
-        return mMineData.get(index) & 0xF0;
+        return aMineData.get(index) & 0xF0;
     }
 
     private void onMine(int index) {
-        for (int i = 0; i < mTotalCount; i++) {
+        for (int i = 0; i < iTotalCount; i++) {
             if (isMine(i)) {
                 if (getStatus(i) != 0x10) {
-                    mMineData.set(i, 0x39);
+                    aMineData.set(i, 0x39);
                 }
             } else if (getStatus(i) == 0x10) {
-                mMineData.set(i, 0x3B);
+                aMineData.set(i, 0x3B);
             }
         }
-        mMineData.set(index, 0x3A);
-        isFinish = true;
-        isStart = false;
+        aMineData.set(index, 0x3A);
+        bFinished = true;
+        bStarted = false;
         if (mListener != null) {
             mListener.onLose();
         }
@@ -163,9 +176,9 @@ public class GameView extends View implements View.OnTouchListener {
         invalidate();
     }
 
-    private void open(int index) {
+    private void onSafe(int index) {
         setNumber(index);
-        mVirginRest--;
+        iVirginRest--;
 
         if (getValue(index) == 0x00) {
             onBlank(index);
@@ -182,26 +195,26 @@ public class GameView extends View implements View.OnTouchListener {
     private void setNumber(int index) {
         int amount = 0;
         //Above
-        if (index - mColCount > -1) {
-            if (isMine(index - mColCount)) amount++;
+        if (index - iColCount > -1) {
+            if (isMine(index - iColCount)) amount++;
             //Left
-            if ((index - mColCount) % mColCount != 0 && isMine(index - mColCount - 1)) amount++;
+            if ((index - iColCount) % iColCount != 0 && isMine(index - iColCount - 1)) amount++;
             //Right
-            if ((index - mColCount + 1) % mColCount != 0 && isMine(index - mColCount + 1)) amount++;
+            if ((index - iColCount + 1) % iColCount != 0 && isMine(index - iColCount + 1)) amount++;
         }
         //Left
-        if (index % mColCount != 0 && isMine(index - 1)) amount++;
+        if (index % iColCount != 0 && isMine(index - 1)) amount++;
         //Right
-        if ((index + 1) % mColCount != 0 && isMine(index + 1)) amount++;
+        if ((index + 1) % iColCount != 0 && isMine(index + 1)) amount++;
         //Below
-        if (index + mColCount < mTotalCount) {
-            if (isMine(index + mColCount)) amount++;
+        if (index + iColCount < iTotalCount) {
+            if (isMine(index + iColCount)) amount++;
             //Left
-            if ((index + mColCount) % mColCount != 0 && isMine(index + mColCount - 1)) amount++;
+            if ((index + iColCount) % iColCount != 0 && isMine(index + iColCount - 1)) amount++;
             //Right
-            if ((index + mColCount + 1) % mColCount != 0 && isMine(index + mColCount + 1)) amount++;
+            if ((index + iColCount + 1) % iColCount != 0 && isMine(index + iColCount + 1)) amount++;
         }
-        mMineData.set(index, amount + 0x30);
+        aMineData.set(index, amount + 0x30);
     }
 
     private void mark(int index) {
@@ -210,15 +223,15 @@ public class GameView extends View implements View.OnTouchListener {
         }
 
         if (getStatus(index) == 0x00) {
-            mMineData.set(index, mMineData.get(index) + 0x10);
-            mMineRest--;
-            mVirginRest--;
+            aMineData.set(index, aMineData.get(index) + 0x10);
+            iMineRest--;
+            iVirginRest--;
         } else if (getStatus(index) == 0x10) {
-            mMineData.set(index, mMineData.get(index) + 0x10);
-            mMineRest++;
-            mVirginRest++;
+            aMineData.set(index, aMineData.get(index) + 0x10);
+            iMineRest++;
+            iVirginRest++;
         } else {
-            mMineData.set(index, mMineData.get(index) & 0x0F);
+            aMineData.set(index, aMineData.get(index) & 0x0F);
         }
         invalidate();
 
@@ -230,88 +243,106 @@ public class GameView extends View implements View.OnTouchListener {
     private void moveMine(int index, int center) {
         int i;
         while (true) {
-            i = mRandom.nextInt(mTotalCount);
-            if ((i > center - mColCount - 2 && i < center + mColCount + 2) || isMine(i)) {
+            i = mRandom.nextInt(iTotalCount);
+            if ((i > center - iColCount - 2 && i < center + iColCount + 2) || isMine(i)) {
                 continue;
             }
 
-            mMineData.set(i, 0x09);
-            mMineData.set(index, 0x00);
+            aMineData.set(i, 0x09);
+            aMineData.set(index, 0x00);
             return;
         }
     }
 
     private void firstClick(int index) {
-        isStart = true;
+        bStarted = true;
         if (mListener != null) {
             mListener.onStart();
+        }
+
+        // 第一次点击可以有雷，不做移动直接返回
+        if (iFirstClickSetting == 1) {
+            click(index);
+            return;
         }
 
         if (isMine(index)) {
             moveMine(index, index);
         }
 
+        // 仅第一次点击不会有雷，移动完成返回
+        if (iFirstClickSetting == 0) {
+            onSafe(index);
+            return;
+        }
+
+        // 移动9格内的所有雷
         //Above
-        if (index - mColCount > -1) {
-            if (isMine(index - mColCount)) {
-                moveMine(index - mColCount, index);
+        if (index - iColCount > -1) {
+            if (isMine(index - iColCount)) {
+                moveMine(index - iColCount, index);
             }
             //Left
-            if ((index - mColCount) % mColCount != 0 && isMine(index - mColCount - 1)) {
-                moveMine(index - mColCount - 1, index);
+            if ((index - iColCount) % iColCount != 0 && isMine(index - iColCount - 1)) {
+                moveMine(index - iColCount - 1, index);
             }
             //Right
-            if ((index - mColCount + 1) % mColCount != 0 && isMine(index - mColCount + 1)) {
-                moveMine(index - mColCount + 1, index);
+            if ((index - iColCount + 1) % iColCount != 0 && isMine(index - iColCount + 1)) {
+                moveMine(index - iColCount + 1, index);
             }
         }
         //Left
-        if (index % mColCount != 0 && isMine(index - 1)) {
+        if (index % iColCount != 0 && isMine(index - 1)) {
             moveMine(index - 1, index);
         }
         //Right
-        if ((index + 1) % mColCount != 0 && isMine(index + 1)) {
+        if ((index + 1) % iColCount != 0 && isMine(index + 1)) {
             moveMine(index + 1, index);
         }
         //Below
-        if (index + mColCount < mTotalCount) {
-            if (isMine(index + mColCount)) {
-                moveMine(index + mColCount, index);
+        if (index + iColCount < iTotalCount) {
+            if (isMine(index + iColCount)) {
+                moveMine(index + iColCount, index);
             }
             //Left
-            if ((index + mColCount) % mColCount != 0 && isMine(index + mColCount - 1)) {
-                moveMine(index + mColCount - 1, index);
+            if ((index + iColCount) % iColCount != 0 && isMine(index + iColCount - 1)) {
+                moveMine(index + iColCount - 1, index);
             }
             //Right
-            if ((index + mColCount + 1) % mColCount != 0 && isMine(index + mColCount + 1)) {
-                moveMine(index + mColCount + 1, index);
+            if ((index + iColCount + 1) % iColCount != 0 && isMine(index + iColCount + 1)) {
+                moveMine(index + iColCount + 1, index);
             }
         }
 
-        open(index);
+        onSafe(index);
+    }
+
+    private boolean isTouchMine(int x, int y) {
+        return x > iOffsetX && x < getWidth() - iOffsetX && y > iOffsetY && y < getHeight() - iOffsetY;
     }
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         super.onTouchEvent(event);
-        if (isFinish) {
+        if (bFinished) {
             return true;
         }
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             int x = (int) event.getX();
             int y = (int) event.getY();
-            int selCol = (x - mOffsetX) / mIconSize;
-            int selRow = (y - mOffsetY) / mIconSize;
-            if (selRow < mRowCount && selCol < mColCount) {
-                int index = selRow * mColCount + selCol;
+            if (!isTouchMine(x, y)) return true;
+            int selCol = (x - iOffsetX) / iIconSize;
+            int selRow = (y - iOffsetY) / iIconSize;
+            if (selRow < iRowCount && selCol < iColCount) {
+                int index = selRow * iColCount + selCol;
 
-                if (!isStart) {
+                if (!bStarted) {
                     firstClick(index);
                     return true;
                 }
 
-                if (isMarking) {
+                if (bMarking) {
                     mark(index);
                     return true;
                 }
@@ -320,20 +351,17 @@ public class GameView extends View implements View.OnTouchListener {
                     return true;
                 }
 
-                if (isMine(index)) {
-                    onMine(index);
-                } else {
-                    open(index);
-                }
+                click(index);
             }
         }
         return true;
     }
 
-    private void checkPosition(int i) {
-        open(i);
-        if (getValue(i) == 0x00) {
-            onBlank(i);
+    private void click(int index) {
+        if (isMine(index)) {
+            onMine(index);
+        } else {
+            onSafe(index);
         }
     }
 
@@ -343,71 +371,71 @@ public class GameView extends View implements View.OnTouchListener {
 
     private void onBlank(int i) {
         //Above
-        if (i - mColCount > -1) {
-            if (!isOpen(i - mColCount)) {
-                checkPosition(i - mColCount);
+        if (i - iColCount > -1) {
+            if (!isOpen(i - iColCount)) {
+                onSafe(i - iColCount);
             }
             //Left
-            if ((i - mColCount) % mColCount != 0 && !isOpen(i - mColCount - 1)) {
-                checkPosition(i - mColCount - 1);
+            if ((i - iColCount) % iColCount != 0 && !isOpen(i - iColCount - 1)) {
+                onSafe(i - iColCount - 1);
             }
             //Right
-            if ((i - mColCount + 1) % mColCount != 0 && !isOpen(i - mColCount + 1)) {
-                checkPosition(i - mColCount + 1);
+            if ((i - iColCount + 1) % iColCount != 0 && !isOpen(i - iColCount + 1)) {
+                onSafe(i - iColCount + 1);
             }
         }
         //Left
-        if (i % mColCount != 0 && !isOpen(i - 1)) {
-            checkPosition(i - 1);
+        if (i % iColCount != 0 && !isOpen(i - 1)) {
+            onSafe(i - 1);
         }
         //Right
-        if ((i + 1) % mColCount != 0 && !isOpen(i + 1)) {
-            checkPosition(i + 1);
+        if ((i + 1) % iColCount != 0 && !isOpen(i + 1)) {
+            onSafe(i + 1);
         }
         //Below
-        if (i + mColCount < mTotalCount) {
-            if (!isOpen(i + mColCount)) {
-                checkPosition(i + mColCount);
+        if (i + iColCount < iTotalCount) {
+            if (!isOpen(i + iColCount)) {
+                onSafe(i + iColCount);
             }
             //Left
-            if ((i + mColCount) % mColCount != 0 && !isOpen(i + mColCount - 1)) {
-                checkPosition(i + mColCount - 1);
+            if ((i + iColCount) % iColCount != 0 && !isOpen(i + iColCount - 1)) {
+                onSafe(i + iColCount - 1);
             }
             //Right
-            if ((i + mColCount + 1) % mColCount != 0 && !isOpen(i + mColCount + 1)) {
-                checkPosition(i + mColCount + 1);
+            if ((i + iColCount + 1) % iColCount != 0 && !isOpen(i + iColCount + 1)) {
+                onSafe(i + iColCount + 1);
             }
         }
     }
 
     private void initResource() {
         Resources r = getResources();
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_blank));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_01));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_02));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_03));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_04));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_05));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_06));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_07));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_08));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mine_right));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mine_explode));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mine_wrong));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_blank));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_01));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_02));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_03));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_04));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_05));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_06));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_07));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.n_08));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mine_right));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mine_explode));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mine_wrong));
 
         Bitmap bDefault = BitmapFactory.decodeResource(r, R.drawable.i_default);
-        mIconSize = bDefault.getWidth();
-        mIcons.add(bDefault);
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mark_flag));
-        mIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mark_doubt));
+        iIconSize = bDefault.getWidth();
+        aIcons.add(bDefault);
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mark_flag));
+        aIcons.add(BitmapFactory.decodeResource(r, R.drawable.i_mark_doubt));
     }
 
     public int getMineRest() {
-        return mMineRest;
+        return iMineRest;
     }
 
     public int getVirginRest() {
-        return mVirginRest;
+        return iVirginRest;
     }
 
     public void setOnStatusChangeListener(OnStatusChangeListener listener) {
@@ -415,26 +443,26 @@ public class GameView extends View implements View.OnTouchListener {
     }
 
     public boolean isWin() {
-        if (isFinish) {
+        if (bFinished) {
             return false;
         }
 
-        for (int i = 0; i < mTotalCount; i++) {
+        for (int i = 0; i < iTotalCount; i++) {
             if (getStatus(i) != 0x30 && !isMine(i)) {
                 return false;
             }
         }
-        isFinish = true;
-        isStart = false;
+        bFinished = true;
+        bStarted = false;
         return true;
     }
 
     public void onDestroy() {
-        for (Bitmap bm : mIcons) {
+        for (Bitmap bm : aIcons) {
             bm.recycle();
         }
-        mIcons.clear();
-        mMineData.clear();
+        aIcons.clear();
+        aMineData.clear();
         System.gc();
     }
 

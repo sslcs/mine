@@ -1,7 +1,4 @@
 <resources>
-    <style name="FullscreenTheme" parent="android:Theme.Holo.Light.NoActionBar">
-        <item name="android:windowBackground">@null</item>
-        <item name="metaButtonBarStyle">?android:attr/buttonBarStyle</item>
-        <item name="metaButtonBarButtonStyle">?android:attr/buttonBarButtonStyle</item>
+    <style name="AppTheme" parent="android:Theme.Holo.Light.NoActionBar">
     </style>
 </resources>

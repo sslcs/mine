@@ -4,12 +4,16 @@ android {
     compileSdkVersion 24
     buildToolsVersion "24.0.2"
 
+    dataBinding {
+        enabled true
+    }
+
     defaultConfig {
         applicationId "com.reven.amine"
         minSdkVersion 14
         targetSdkVersion 24
-        versionCode 151116
-        versionName "1.0"
+        versionCode 170217
+        versionName "1.1"
     }
 
     buildTypes {
@@ -29,4 +33,6 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    // Test
+    testCompile 'junit:junit:4.12'
 }
